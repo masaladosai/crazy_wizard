@@ -1,6 +1,7 @@
 use bevy::prelude::*;
 use rand::Rng;
-
+mod elements;
+use elements::ui::setup_ui;
 
 const grid_size:i32=10;
 const tile:f32=48.0;
@@ -27,12 +28,13 @@ fn main() {
     App::new()
         .add_plugins(DefaultPlugins)
         .add_systems(Startup, setup)
+        .add_systems(Startup, setup_ui)
         .add_systems(Update, (player_movement,get_coin.after(player_movement),sync_grid_to_transform.after(get_coin)))
         .run();
 }
 
 
-fn setup(mut commands:Commands){
+fn setup(mut commands:Commands,asset_server: Res<AssetServer>){
     commands.spawn(Camera2dBundle::default());
 
     let half_grid=grid_size as f32*tile/2.0;
@@ -63,19 +65,22 @@ fn setup(mut commands:Commands){
     commands.spawn((
         Player,
         GridPos{x:start_player,y:start_player},
-        SpriteBundle{
-            sprite:Sprite { color: Color::rgb(0.3 , 0.8 , 0.2), custom_size: Some(Vec2::splat(tile-2.0)),..default() },
-
-            transform: Transform::from_xyz(
-            start_player as f32 * tile - half_grid + half_tile,
-            start_player as f32 * tile - half_grid + half_tile,
-            2.0, 
-        ),
-        ..default() 
-        },
+       SpriteBundle {
+    texture: asset_server.load("player.png"),
+    transform: Transform::from_xyz(
+        start_player as f32 * tile - half_grid + half_tile,
+        start_player as f32 * tile - half_grid + half_tile,
+        2.0, 
+    ),
+    sprite: Sprite {
+        custom_size: Some(Vec2::splat(tile)),
+        ..default()
+    },
+    ..default()
+},
         
     ));
-    spawn_coin(&mut commands);
+    spawn_coin(&mut commands,asset_server);
 
 }
 
@@ -123,13 +128,13 @@ fn sync_grid_to_transform(
 }
 
 
-fn get_coin(mut commands:Commands,player_a:Query<&GridPos,With<Player>>,coin_a:Query<(Entity,&GridPos),With<Coin>>){
+fn get_coin(mut commands:Commands,player_a:Query<&GridPos,With<Player>>,coin_a:Query<(Entity,&GridPos),With<Coin>>,asset_server: Res<AssetServer>){
     let player_pos=player_a.single();
 
     for (entity,coin_pos) in &coin_a{
         if player_pos.x==coin_pos.x && player_pos.y==coin_pos.y{
             commands.entity(entity).despawn();
-            spawn_coin(&mut commands);
+            spawn_coin(&mut commands,asset_server);
             break;
             
         }
@@ -138,7 +143,7 @@ fn get_coin(mut commands:Commands,player_a:Query<&GridPos,With<Player>>,coin_a:Q
    
 }
 
-fn spawn_coin(mut commands:&mut Commands){
+fn spawn_coin(mut commands:&mut Commands,asset_server: Res<AssetServer>){
         let half_grid = grid_size as f32 * tile / 2.0;
     let half_tile = tile / 2.0;
     let mut rng = rand::thread_rng();
@@ -149,7 +154,7 @@ fn spawn_coin(mut commands:&mut Commands){
         Coin,
         GridPos{x:coinx,y:coiny},
                 SpriteBundle{
-            sprite:Sprite { color: Color::rgb(0.9 , 0.1 , 0.1), custom_size: Some(Vec2::splat(tile-2.0)),..default() },
+           texture: asset_server.load("goblin.png"),
 
             transform: Transform::from_xyz(
             start_player as f32 * tile - half_grid + half_tile,
@@ -162,3 +167,5 @@ fn spawn_coin(mut commands:&mut Commands){
 
     ));
 }
+
+
