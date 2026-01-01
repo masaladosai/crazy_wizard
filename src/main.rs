@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 use rand::Rng;
 mod elements;
-use elements::ui::setup_ui;
+use elements::ui::{setup_ui,PlayerData,update_score_ui};
 
 const grid_size:i32=10;
 const tile:f32=48.0;
@@ -30,7 +30,7 @@ fn main() {
         .add_systems(Startup, setup)
         .add_systems(Startup, setup_ui)
         .add_systems(Update, (player_movement,get_coin.after(player_movement),sync_grid_to_transform.after(get_coin)))
-        .run();
+        .add_systems(Update, update_score_ui).run();
 }
 
 
@@ -81,6 +81,10 @@ fn setup(mut commands:Commands,asset_server: Res<AssetServer>){
         
     ));
     spawn_coin(&mut commands,asset_server);
+    commands.insert_resource(PlayerData {
+    health:0,
+    score: 0,
+});
 
 }
 
@@ -128,11 +132,12 @@ fn sync_grid_to_transform(
 }
 
 
-fn get_coin(mut commands:Commands,player_a:Query<&GridPos,With<Player>>,coin_a:Query<(Entity,&GridPos),With<Coin>>,asset_server: Res<AssetServer>){
+fn get_coin(mut commands:Commands,player_a:Query<&GridPos,With<Player>>,coin_a:Query<(Entity,&GridPos),With<Coin>>,asset_server: Res<AssetServer>,mut score:ResMut<PlayerData>){
     let player_pos=player_a.single();
 
     for (entity,coin_pos) in &coin_a{
         if player_pos.x==coin_pos.x && player_pos.y==coin_pos.y{
+            score.score+=10;
             commands.entity(entity).despawn();
             spawn_coin(&mut commands,asset_server);
             break;

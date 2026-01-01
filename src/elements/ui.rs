@@ -1,4 +1,15 @@
-use bevy::prelude::*;
+use bevy::{ecs::query, prelude::*};
+
+
+#[derive(Resource)]
+pub struct PlayerData{
+   pub health:u32,
+  pub score:u32
+
+}
+
+#[derive(Component)]
+pub struct ScoreText;
 
 pub fn setup_ui(mut commands: Commands) {
     commands.spawn(NodeBundle {
@@ -26,13 +37,26 @@ pub fn setup_ui(mut commands: Commands) {
             },
         ));
 
-        parent.spawn(TextBundle::from_section(
-            "Coins: 0",
+        parent.spawn((TextBundle::from_section(
+            "Score: 0",
             TextStyle {
                 font_size: 20.0,
                 color: Color::GOLD,
                 ..default()
             },
+        ),
+            
+        ScoreText
         ));
     });
+}
+
+pub fn update_score_ui(mut score:Res<PlayerData>,mut query:Query<&mut Text,With<ScoreText>>){
+
+    if !score.is_changed(){
+        return;
+
+    }
+    let mut text = query.single_mut();
+    text.sections[0].value = format!("Score: {}", score.score);
 }
